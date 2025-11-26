@@ -11,7 +11,7 @@ rm ~/datasets/GBRASNET.zip
 
 git clone https://github.com/Mechetel/ZhuNet.git
 
-python3 ~/ZhuNet/v2/prepare_gbrasnet.py --source ~/datasets/GBRASNET --destination ~/datasets/ready_to_use/GBRASNET
+python3 ~/ZhuNet/prepare_gbrasnet.py --source ~/datasets/GBRASNET --destination ~/datasets/ready_to_use/GBRASNET
 
-cd ZhuNet/v2
+cd ZhuNet
 python3 Main.py

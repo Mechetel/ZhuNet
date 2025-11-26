@@ -18,14 +18,14 @@ from ZhuNet import ZhuNet
 
 
 # Server Dataset paths
-train_cover = r'~/datasets/GBRASNET/BOSSbase-1.01/cover/train'
-train_stego = r'~/datasets/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/train'
+train_cover = r'~/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/train'
+train_stego = r'~/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/train'
 
-test_cover = r'~/datasets/GBRASNET/BOSSbase-1.01/cover/test'
-test_stego = r'~/datasets/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/test'
+test_cover = r'~/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/test'
+test_stego = r'~/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/test'
 
-val_cover = r'~/datasets/GBRASNET/BOSSbase-1.01/cover/val'
-val_stego = r'~/datasets/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/val'
+val_cover = r'~/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/val'
+val_stego = r'~/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/val'
 
 # Create data loaders
 print("Loading datasets...")
