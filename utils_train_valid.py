@@ -55,6 +55,7 @@ class Trainer:
 
         # Tracking metrics
         self.train_loss = []
+        self.train_acc = []
         self.val_acc = []
         self.val_loss = []
         self.best_acc = 0
@@ -68,9 +69,13 @@ class Trainer:
         """
         self.model.train()
         running_loss = 0.0
+        correct = 0
+        total = 0
         self.cur_epoch += 1
 
+        print(f"\n{'='*60}")
         print(f"Epoch: {self.cur_epoch}")
+        print(f"{'='*60}")
 
         # Learning rate scheduling
         if self.cur_epoch in self.shedule_lr:
@@ -97,19 +102,32 @@ class Trainer:
             loss.backward()
             self.optimizer.step()
 
+            # Calculate accuracy
+            pred = outputs.argmax(dim=1)
+            correct += pred.eq(labels).sum().item()
+            total += labels.size(0)
+
             running_loss += loss.item()
 
             # Print progress
             if (batch_idx + 1) % self.print_freq == 0:
-                print(f'Train Epoch: {self.cur_epoch} '
-                      f'[{(batch_idx + 1) * len(data)}/{len(train_loader.dataset) * 2} '
-                      f'({100. * (batch_idx + 1) / len(train_loader):.0f}%)]\t'
-                      f'Loss: {loss.item():.6f}')
+                batch_acc = 100.0 * pred.eq(labels).sum().item() / labels.size(0)
+                print(f'  Batch [{batch_idx + 1}/{len(train_loader)}] '
+                      f'Loss: {loss.item():.6f}, '
+                      f'Accuracy: {batch_acc:.2f}%')
 
-        # Calculate average loss
-        running_loss /= len(train_loader)
-        self.train_loss.append(running_loss)
-        print(f"Average training loss: {running_loss:.6f}")
+        # Calculate epoch metrics
+        epoch_loss = running_loss / len(train_loader)
+        epoch_acc = 100.0 * correct / total
+
+        self.train_loss.append(epoch_loss)
+        self.train_acc.append(epoch_acc)
+
+        print(f"\n{'*'*60}")
+        print(f"TRAIN - Epoch {self.cur_epoch} Summary:")
+        print(f"  Average Loss: {epoch_loss:.6f}")
+        print(f"  Accuracy: {correct}/{total} ({epoch_acc:.2f}%)")
+        print(f"{'*'*60}")
 
         # Save checkpoint
         if self.cur_epoch % self.save_freq == 0:
@@ -118,7 +136,7 @@ class Trainer:
                 f"epoch_{self.cur_epoch}.pth"
             )
             torch.save(self.model.state_dict(), checkpoint_path)
-            print(f"Model saved to {checkpoint_path}")
+            print(f"Model checkpoint saved to {checkpoint_path}")
 
     def valid(self, valid_loader):
         """
@@ -131,6 +149,7 @@ class Trainer:
 
         valid_loss = 0.0
         correct = 0
+        total = 0
 
         with torch.no_grad():
             for data, labels in valid_loader:
@@ -139,14 +158,19 @@ class Trainer:
                 output = self.model(data)
                 valid_loss += self.loss_f(output, labels).item()
 
-                pred = output.argmax(dim=1, keepdim=True)
-                correct += pred.eq(labels.view_as(pred)).sum().item()
+                pred = output.argmax(dim=1)
+                correct += pred.eq(labels).sum().item()
+                total += labels.size(0)
 
         # Calculate metrics
         valid_loss /= len(valid_loader)
-        cur_acc = 100.0 * correct / (len(valid_loader.dataset) * 2)
+        cur_acc = 100.0 * correct / total
 
-        print(f"Validation Loss: {valid_loss:.6f}, Accuracy: {cur_acc:.2f}%")
+        print(f"\n{'*'*60}")
+        print(f"VALIDATION - Epoch {self.cur_epoch} Summary:")
+        print(f"  Average Loss: {valid_loss:.6f}")
+        print(f"  Accuracy: {correct}/{total} ({cur_acc:.2f}%)")
+        print(f"{'*'*60}")
 
         self.val_acc.append(cur_acc)
         self.val_loss.append(valid_loss)
@@ -156,10 +180,10 @@ class Trainer:
             self.best_acc = cur_acc
             best_model_path = os.path.join(
                 self.save_dir,
-                f"epoch_{self.cur_epoch}_best_acc_{cur_acc:.2f}.pth"
+                f"best_model_epoch_{self.cur_epoch}_acc_{cur_acc:.2f}.pth"
             )
             torch.save(self.model.state_dict(), best_model_path)
-            print(f"New best accuracy! Model saved to {best_model_path}")
+            print(f"🎉 New best accuracy! Model saved to {best_model_path}")
 
     def test(self, test_loader):
         """
@@ -172,6 +196,7 @@ class Trainer:
 
         test_loss = 0.0
         correct = 0
+        total = 0
 
         with torch.no_grad():
             for data, labels in test_loader:
@@ -180,22 +205,29 @@ class Trainer:
                 output = self.model(data)
                 test_loss += self.loss_f(output, labels).item()
 
-                pred = output.argmax(dim=1, keepdim=True)
-                correct += pred.eq(labels.view_as(pred)).sum().item()
+                pred = output.argmax(dim=1)
+                correct += pred.eq(labels).sum().item()
+                total += labels.size(0)
 
         # Calculate metrics
         test_loss /= len(test_loader)
-        accuracy = 100.0 * correct / (len(test_loader.dataset) * 2)
+        accuracy = 100.0 * correct / total
 
-        print(f'\nTest set: Average loss: {test_loss:.4f}, '
-              f'Accuracy: {correct}/{len(test_loader.dataset) * 2} '
-              f'({accuracy:.2f}%)\n')
+        print(f"\n{'='*60}")
+        print(f"TEST RESULTS:")
+        print(f"  Average Loss: {test_loss:.4f}")
+        print(f"  Accuracy: {correct}/{total} ({accuracy:.2f}%)")
+        print(f"{'='*60}\n")
 
     def save_metrics(self):
         """Save training and validation metrics to text files."""
         # Save training loss
         with open(os.path.join(self.save_dir, "train_loss.txt"), 'w') as f:
             f.write(','.join(map(str, self.train_loss)))
+
+        # Save training accuracy
+        with open(os.path.join(self.save_dir, "train_acc.txt"), 'w') as f:
+            f.write(','.join(map(str, self.train_acc)))
 
         # Save validation accuracy
         with open(os.path.join(self.save_dir, "val_acc.txt"), 'w') as f:
@@ -206,3 +238,23 @@ class Trainer:
             f.write(','.join(map(str, self.val_loss)))
 
         print("Metrics saved successfully")
+
+    def print_training_summary(self):
+        """Print a summary of all training epochs."""
+        print(f"\n{'='*80}")
+        print(f"TRAINING SUMMARY")
+        print(f"{'='*80}")
+        print(f"{'Epoch':<8} {'Train Loss':<15} {'Train Acc':<15} {'Val Loss':<15} {'Val Acc':<15}")
+        print(f"{'-'*80}")
+
+        for i in range(len(self.train_loss)):
+            train_loss_str = f"{self.train_loss[i]:.6f}"
+            train_acc_str = f"{self.train_acc[i]:.2f}%" if i < len(self.train_acc) else "N/A"
+            val_loss_str = f"{self.val_loss[i]:.6f}" if i < len(self.val_loss) else "N/A"
+            val_acc_str = f"{self.val_acc[i]:.2f}%" if i < len(self.val_acc) else "N/A"
+
+            print(f"{i+1:<8} {train_loss_str:<15} {train_acc_str:<15} {val_loss_str:<15} {val_acc_str:<15}")
+
+        print(f"{'='*80}")
+        print(f"Best Validation Accuracy: {self.best_acc:.2f}%")
+        print(f"{'='*80}\n")

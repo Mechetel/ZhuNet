@@ -27,6 +27,7 @@ test_stego = r'/root/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWAR
 val_cover = r'/root/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/val'
 val_stego = r'/root/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/val'
 
+
 # Create data loaders
 print("Loading datasets...")
 train_loader, valid_loader, test_loader = getDataLoader(
@@ -44,7 +45,7 @@ print(f"Valid batches: {len(valid_loader)}")
 print(f"Test batches: {len(test_loader)}")
 
 # Initialize model
-net = ZhuNet()
+net = Zhu_Net()
 
 # Initialize trainer
 trainer = Trainer(
@@ -54,9 +55,9 @@ trainer = Trainer(
     lr_decay=0.95,
     weight_decay=0.0,
     shedule_lr=[20, 35, 50, 65],
-    token='ZhuNet_S-UNIWARD_0.4bpp',
-    token1='experiment_1',
-    save_dir="saved_models",
+    token='Best_biggest_hill_0.1',
+    token1='hill_0.1_trueD',
+    save_dir="Best_biggest_hill_0.1_trueD",
     print_freq=50
 )
 
