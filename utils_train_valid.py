@@ -1,198 +1,208 @@
 import torch
 import torch.nn as nn
-import visdom
-import os
 import torch.optim as optim
 import numpy as np
-from functools import reduce
-import operator
-from statistics import statistics
+import os
 
 
-class Trainer(object):
-    '''
+class Trainer:
+    """
+    Trainer class for model training and validation.
+
     Args:
-        model: network
-        lr: learning rate
-        lr_decay: leaning_rate decay
-        token: visdom_name
-        token1: visdom_win_name
-        optimizer: Default(None)
-        save_dir: Default(None)
-        save_freq: Default(5)
-        cur_epoch: 0当前批次
-        print_freq: 150
+        model: Neural network model
+        lr (float): Learning rate
+        lr_decay (float): Learning rate decay factor
+        token (str): Experiment identifier
+        token1 (str): Window name identifier
+        weight_decay (float): Weight decay for optimizer
+        save_dir (str): Directory to save model checkpoints
+        optimizer: Custom optimizer (optional)
+        save_freq (int): Frequency of saving checkpoints (epochs)
+        cur_epoch (int): Starting epoch number
+        print_freq (int): Frequency of printing training progress
+        shedule_lr (list): Epochs at which to decay learning rate
+    """
 
-    '''
-
-
-    def __init__(self, model, lr, lr_decay, token,token1, weight_decay,save_dir,optimizer=None,
-                 save_freq=1, cur_epoch=0,print_freq=150, shedule_lr = None):
+    def __init__(self, model, lr, lr_decay, token, token1, weight_decay, save_dir,
+                 optimizer=None, save_freq=1, cur_epoch=0, print_freq=150,
+                 shedule_lr=None):
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
-        self.count = 1
-        self.count2 = 1
         self.loss_f = nn.CrossEntropyLoss().to(self.device)
-        self.shedule_lr = shedule_lr
+        self.shedule_lr = shedule_lr if shedule_lr else []
 
         self.lr_decay = lr_decay
-        if optimizer==None:
 
-            self.optimizer = optim.SGD(self.model.layer2.parameters(), lr=lr, momentum=0.95, weight_decay=weight_decay)
-
+        if optimizer is None:
+            self.optimizer = optim.SGD(
+                self.model.layer2.parameters(),
+                lr=lr,
+                momentum=0.95,
+                weight_decay=weight_decay
+            )
         else:
             self.optimizer = optimizer
 
-
-  
-
-        self.save_dir = "PATH" + save_dir
-
-        isExists = os.path.exists(self.save_dir)
-
-        if not isExists:
-            os.makedirs(self.save_dir)
-
-
+        # Create save directory
+        self.save_dir = os.path.join("PATH", save_dir)
+        os.makedirs(self.save_dir, exist_ok=True)
 
         self.save_freq = save_freq
         self.print_freq = print_freq
         self.cur_epoch = cur_epoch
+
+        # Tracking metrics
         self.train_loss = []
         self.val_acc = []
         self.val_loss = []
-
         self.best_acc = 0
 
     def train(self, train_loader):
         """
+        Train the model for one epoch.
+
         Args:
- ,
-        :param train_loader:
-
-        :return: None
+            train_loader: DataLoader for training data
         """
-
         self.model.train()
-
-        running_loss = 0.
+        running_loss = 0.0
         self.cur_epoch += 1
 
-        print("Epoch:", self.cur_epoch)
+        print(f"Epoch: {self.cur_epoch}")
+
+        # Learning rate scheduling
         if self.cur_epoch in self.shedule_lr:
             for param_group in self.optimizer.param_groups:
                 param_group['lr'] /= 5
-            print (param_group['lr'])
+            print(f"Learning rate adjusted to: {param_group['lr']}")
+
+        # Check if train_loader is empty
+        if len(train_loader) == 0:
+            print("Warning: train_loader is empty!")
+            return
 
         for batch_idx, (data, labels) in enumerate(train_loader):
-
             data, labels = data.to(self.device), labels.to(self.device)
 
+            # Forward pass
             self.optimizer.zero_grad()
             outputs = self.model(data)
 
-            loss = self.loss_f(outputs, torch.max(labels, 1)[0])
+            # Calculate loss
+            loss = self.loss_f(outputs, labels)
 
+            # Backward pass
             loss.backward()
             self.optimizer.step()
 
             running_loss += loss.item()
 
-            if (batch_idx + 1) % 1 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    self.cur_epoch, (batch_idx + 1) * len(data), len(train_loader.dataset) * 2,
-                                    100. * (batch_idx + 1) / (len(train_loader)), loss.item()))
+            # Print progress
+            if (batch_idx + 1) % self.print_freq == 0:
+                print(f'Train Epoch: {self.cur_epoch} '
+                      f'[{(batch_idx + 1) * len(data)}/{len(train_loader.dataset) * 2} '
+                      f'({100. * (batch_idx + 1) / len(train_loader):.0f}%)]\t'
+                      f'Loss: {loss.item():.6f}')
 
-                self.count += 1
-
+        # Calculate average loss
         running_loss /= len(train_loader)
         self.train_loss.append(running_loss)
+        print(f"Average training loss: {running_loss:.6f}")
 
-        self.count2 += 1
-
-
-        if ((self.cur_epoch) % self.save_freq == 0):
-            torch.save(self.model.state_dict(),
-                       self.save_dir + "/" + "epoch4.13：150+_" + str(
-                           self.cur_epoch) + ".pkl")
+        # Save checkpoint
+        if self.cur_epoch % self.save_freq == 0:
+            checkpoint_path = os.path.join(
+                self.save_dir,
+                f"epoch_{self.cur_epoch}.pth"
+            )
+            torch.save(self.model.state_dict(), checkpoint_path)
+            print(f"Model saved to {checkpoint_path}")
 
     def valid(self, valid_loader):
+        """
+        Validate the model.
 
-        
-
+        Args:
+            valid_loader: DataLoader for validation data
+        """
         self.model.eval()
 
-        valid_loss = 0
+        valid_loss = 0.0
         correct = 0
-        for data, labels in valid_loader:
 
-            data, labels = data.to(self.device), labels.to(self.device)
+        with torch.no_grad():
+            for data, labels in valid_loader:
+                data, labels = data.to(self.device), labels.to(self.device)
 
-            output = self.model(data)
+                output = self.model(data)
+                valid_loss += self.loss_f(output, labels).item()
 
-            valid_loss_temp = self.loss_f(output, torch.max(labels, 1)[0])  # sum up batch loss
-            pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
+                pred = output.argmax(dim=1, keepdim=True)
+                correct += pred.eq(labels.view_as(pred)).sum().item()
 
-            valid_loss += valid_loss_temp.item()
-            
-            correct += pred.eq(labels.data.view_as(pred)).sum()
-            
-
+        # Calculate metrics
         valid_loss /= len(valid_loader)
-        
-        cur_acc = 100. * (correct.item()) / (len(valid_loader.dataset) * 2)
-        print("Valid Loss: {}".format(valid_loss))
+        cur_acc = 100.0 * correct / (len(valid_loader.dataset) * 2)
+
+        print(f"Validation Loss: {valid_loss:.6f}, Accuracy: {cur_acc:.2f}%")
+
         self.val_acc.append(cur_acc)
         self.val_loss.append(valid_loss)
-        if (cur_acc > self.best_acc):
+
+        # Save best model
+        if cur_acc > self.best_acc:
             self.best_acc = cur_acc
-            torch.save(self.model.state_dict(),
-                       self.save_dir + "/" + "epoch_" + str(
-                           self.cur_epoch) + "_best_acc_" + str(cur_acc) + ".pkl")
-
-        self.vis.line(X=np.array([self.cur_epoch]), Y=np.array([valid_loss]), win=self.token1 + "1" + "valid",
-                      update=None if self.cur_epoch == 1 else 'append',
-                      opts={'xlabel': 'epoch_'+self.token1, 'ylabel': 'Valid loss'})
-        self.vis.line(X=np.array([self.cur_epoch]), Y=np.array([cur_acc]), win=self.token1 + "2" + "valid",
-                      update=None if self.cur_epoch == 1 else 'append',
-                      opts={'xlabel': 'epoch_'+self.token1, 'ylabel': 'Valid Acc'})
-
-    def save_loss_val_acc(self):
-        fp = open(self.save_dir + "/" + "loss.txt", 'a')
-        for i in self.train_loss:
-            fp.write(str(i) + ',')
-        fp.close()
-
-        fp = open(self.save_dir + "/" + "val_acc.txt", 'a')
-        for i in self.val_acc:
-            fp.write(str(i) + ',')
-        fp.close()
-        
-        fp = open(self.save_dir + "/" + "val_loss.txt", 'a')
-        for i in self.val_loss:
-            fp.write(str(i) + ',')
-        fp.close()
+            best_model_path = os.path.join(
+                self.save_dir,
+                f"epoch_{self.cur_epoch}_best_acc_{cur_acc:.2f}.pth"
+            )
+            torch.save(self.model.state_dict(), best_model_path)
+            print(f"New best accuracy! Model saved to {best_model_path}")
 
     def test(self, test_loader):
+        """
+        Test the model.
+
+        Args:
+            test_loader: DataLoader for test data
+        """
         self.model.eval()
 
-        test_loss = 0
+        test_loss = 0.0
         correct = 0
-        for data, labels in test_loader:
 
-            data, labels = data.to(self.device), labels.to(self.device)
+        with torch.no_grad():
+            for data, labels in test_loader:
+                data, labels = data.to(self.device), labels.to(self.device)
 
-            output,FEATURE= self.model(data)#问题在此，少一个feature
+                output = self.model(data)
+                test_loss += self.loss_f(output, labels).item()
 
-            # test_loss += self.loss_f(output, torch.max(labels, 1)[0]).item()  # sum up batch loss
-            test_loss += self.loss_f(output, torch.max(labels, 1)[0]).item()  # sum up batch loss
-            pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
+                pred = output.argmax(dim=1, keepdim=True)
+                correct += pred.eq(labels.view_as(pred)).sum().item()
 
-            correct += pred.eq(labels.data.view_as(pred)).cpu().sum()
+        # Calculate metrics
+        test_loss /= len(test_loader)
+        accuracy = 100.0 * correct / (len(test_loader.dataset) * 2)
 
-        print('\nTest set: Total loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(test_loss, correct,
-                                                                                   len(test_loader.dataset) * 2,
-                                                                                   100. * correct / (len(
-                                                                                       test_loader.dataset) * 2),
-                                                                                   test_loss))
+        print(f'\nTest set: Average loss: {test_loss:.4f}, '
+              f'Accuracy: {correct}/{len(test_loader.dataset) * 2} '
+              f'({accuracy:.2f}%)\n')
+
+    def save_metrics(self):
+        """Save training and validation metrics to text files."""
+        # Save training loss
+        with open(os.path.join(self.save_dir, "train_loss.txt"), 'w') as f:
+            f.write(','.join(map(str, self.train_loss)))
+
+        # Save validation accuracy
+        with open(os.path.join(self.save_dir, "val_acc.txt"), 'w') as f:
+            f.write(','.join(map(str, self.val_acc)))
+
+        # Save validation loss
+        with open(os.path.join(self.save_dir, "val_loss.txt"), 'w') as f:
+            f.write(','.join(map(str, self.val_loss)))
+
+        print("Metrics saved successfully")

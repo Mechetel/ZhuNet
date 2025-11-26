@@ -8,90 +8,97 @@ from torchvision import transforms
 from PIL import Image
 
 class DatasetPair(Dataset):
+    """Dataset for loading cover-stego image pairs."""
 
     def __init__(self, cover_dir, stego_dir, transform=None):
         self.cover_dir = cover_dir
         self.stego_dir = stego_dir
-        self.cover_list = [x.split('\\')[-1] for x in glob(cover_dir + '/*')]
+        # Fixed: Changed glob pattern to properly find files
+        self.cover_list = [x.split(os.sep)[-1] for x in glob(os.path.join(cover_dir, '*'))]
         self.transform = transform
 
-        assert len(self.cover_list) != 0, "cover_dir is empty"
+        assert len(self.cover_list) != 0, f"cover_dir is empty: {cover_dir}"
 
     def __len__(self):
-        return int(len(self.cover_list))
+        return len(self.cover_list)
 
     def __getitem__(self, index):
-        index = int(index)
-
-        labels = torch.Tensor([[0], [1]]).long()
+        # Labels: 0 for cover, 1 for stego
+        labels = torch.tensor([0, 1], dtype=torch.long)
 
         cover_path = os.path.join(self.cover_dir, self.cover_list[index])
         stego_path = os.path.join(self.stego_dir, self.cover_list[index])
+
         cover = Image.open(cover_path)
         stego = Image.open(stego_path)
-       
 
-        images1 = np.empty((cover.size[0], cover.size[1], 1), dtype='uint8')
-        images2 = np.empty((cover.size[0], cover.size[1], 1), dtype='uint8')
-        images1[:, :, 0] = np.array(cover)
-        images2[:, :, 0] = np.array(stego)
-        images1 = self.transform(images1)
-        images2 = self.transform(images2)
+        # Convert to numpy arrays with channel dimension
+        cover_array = np.array(cover)[:, :, np.newaxis]
+        stego_array = np.array(stego)[:, :, np.newaxis]
 
-        imgs = []
-        imgs.append(images1)
-        imgs.append(images2)
+        # Apply transforms
+        cover_tensor = self.transform(cover_array)
+        stego_tensor = self.transform(stego_array)
 
-        return torch.stack(imgs), labels
+        # Stack images
+        imgs = torch.stack([cover_tensor, stego_tensor])
+
+        return imgs, labels
+
 
 def my_collate(batch):
+    """Custom collate function to flatten batch dimension."""
     imgs, targets = zip(*batch)
     return torch.cat(imgs), torch.cat(targets)
 
 
-
-def getDataLoader(train_cover_dir, train_stego_dir, valid_cover_dir, valid_stego_dir, test_cover_dir, test_stego_dir,batch_size):
+def getDataLoader(train_cover_dir, train_stego_dir, valid_cover_dir,
+                  valid_stego_dir, test_cover_dir, test_stego_dir, batch_size):
     """
-    You can use this function to get Dataloader from the dir.
+    Create DataLoaders for training, validation, and testing.
 
     Args:
-        train_cover_dir (string): Path of train cover data.
-        train_stego_dir (string): Path of train stego data.
+        train_cover_dir (str): Path to training cover images
+        train_stego_dir (str): Path to training stego images
+        valid_cover_dir (str): Path to validation cover images
+        valid_stego_dir (str): Path to validation stego images
+        test_cover_dir (str): Path to test cover images
+        test_stego_dir (str): Path to test stego images
+        batch_size (int): Batch size for DataLoaders
 
-        valid_cover_dir (string): Path of valid cover data.
-        valid_stego_dir (string): Path of valid stego data.
-
-        test_cover_dir (string): Path of test cover data.
-        test_stego_dir (string): Path of test stego data.
-
-    return:
-        train_loader(DataLoader),
-        valid_loader(DataLoader),
-        test_loader(DataLoader)
+    Returns:
+        tuple: (train_loader, valid_loader, test_loader)
     """
-
-    train_transform = transforms.Compose([
+    transform = transforms.Compose([
         transforms.ToTensor()
     ])
 
+    # Create datasets
+    train_data = DatasetPair(train_cover_dir, train_stego_dir, transform=transform)
+    valid_data = DatasetPair(valid_cover_dir, valid_stego_dir, transform=transform)
+    test_data = DatasetPair(test_cover_dir, test_stego_dir, transform=transform)
 
-    train_data = DatasetPair(train_cover_dir, train_stego_dir,
-                             transform=train_transform
-                             )
-    test_data = DatasetPair(test_cover_dir, test_stego_dir,
-                            transform=train_transform
-                            )
-    vaild_data = DatasetPair(valid_cover_dir, valid_stego_dir,
-                             transform=train_transform)
-
-
-    train_loader = DataLoader(train_data, collate_fn=my_collate, batch_size=batch_size, shuffle=True, drop_last=True)
-    test_loader = DataLoader(test_data, collate_fn=my_collate, batch_size=batch_size, shuffle=False, drop_last=True)
-    valid_loader = DataLoader(vaild_data, collate_fn=my_collate, batch_size=batch_size, shuffle=True, drop_last=True)
+    # Create dataloaders
+    train_loader = DataLoader(
+        train_data,
+        collate_fn=my_collate,
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+    valid_loader = DataLoader(
+        valid_data,
+        collate_fn=my_collate,
+        batch_size=batch_size,
+        shuffle=False,
+        drop_last=True
+    )
+    test_loader = DataLoader(
+        test_data,
+        collate_fn=my_collate,
+        batch_size=batch_size,
+        shuffle=False,
+        drop_last=True
+    )
 
     return train_loader, valid_loader, test_loader
-
-
-
-
-
