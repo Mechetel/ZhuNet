@@ -2,18 +2,30 @@ import time
 import torch
 from utils_for_dataset import getDataLoader
 from utils_train_valid import Trainer
-from ZhuNet import Zhu_Net
+from ZhuNet import ZhuNet
 
 
-# Dataset paths
-train_cover = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/train'
-train_stego = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/train'
+# Local Dataset paths
 
-test_cover = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/test'
-test_stego = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/test'
+# train_cover = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/train'
+# train_stego = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/train'
 
-val_cover = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/val'
-val_stego = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/val'
+# test_cover = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/test'
+# test_stego = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/test'
+
+# val_cover = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/val'
+# val_stego = r'/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/val'
+
+
+# Server Dataset paths
+train_cover = r'~/datasets/GBRASNET/BOSSbase-1.01/cover/train'
+train_stego = r'~/datasets/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/train'
+
+test_cover = r'~/datasets/GBRASNET/BOSSbase-1.01/cover/test'
+test_stego = r'~/datasets/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/test'
+
+val_cover = r'~/datasets/GBRASNET/BOSSbase-1.01/cover/val'
+val_stego = r'~/datasets/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/val'
 
 # Create data loaders
 print("Loading datasets...")
@@ -32,7 +44,7 @@ print(f"Valid batches: {len(valid_loader)}")
 print(f"Test batches: {len(test_loader)}")
 
 # Initialize model
-net = Zhu_Net()
+net = ZhuNet()
 
 # Initialize trainer
 trainer = Trainer(

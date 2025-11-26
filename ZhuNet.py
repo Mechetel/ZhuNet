@@ -202,7 +202,7 @@ class conv_Layer(nn.Module):
         return x
 
 
-class Zhu_Net(nn.Module):
+class ZhuNet(nn.Module):
     """
     Zhu-Net for image steganalysis.
 
@@ -214,7 +214,7 @@ class Zhu_Net(nn.Module):
     """
 
     def __init__(self):
-        super(Zhu_Net, self).__init__()
+        super(ZhuNet, self).__init__()
         self.layer1 = pre_layer()
         self.layer2 = conv_Layer()
 
