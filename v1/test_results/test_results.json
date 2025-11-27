@@ -1,0 +1,46 @@
+{
+    "model_path": "./checkpoints/final_model.pth",
+    "test_cover_path": "/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/cover/test",
+    "test_stego_path": "/Users/dmitryhoma/Projects/datasets/ready_to_use/GBRASNET/BOSSbase-1.01/stego/S-UNIWARD/0.4bpp/test",
+    "timestamp": "2025-11-27T03:37:37.753033",
+    "test_loss": 0.468553863465786,
+    "metrics": {
+        "accuracy": 0.729,
+        "precision": 0.7713270142180095,
+        "recall": 0.651,
+        "f1_score": 0.7060737527114967,
+        "precision_cover": 0.6980968858131488,
+        "recall_cover": 0.807,
+        "f1_cover": 0.74860853432282,
+        "precision_stego": 0.7713270142180095,
+        "recall_stego": 0.651,
+        "f1_stego": 0.7060737527114967,
+        "auc": 0.8391899999999999
+    },
+    "confusion_matrix": [
+        [
+            807,
+            193
+        ],
+        [
+            349,
+            651
+        ]
+    ],
+    "roc_auc": 0.8391899999999999,
+    "average_precision": 0.8502729251343382,
+    "optimal_threshold": 0.4737548232078552,
+    "metrics_at_optimal_threshold": {
+        "accuracy": 0.7345,
+        "precision": 0.7361530715005036,
+        "recall": 0.731,
+        "f1_score": 0.733567486201706,
+        "precision_cover": 0.7328699106256207,
+        "recall_cover": 0.738,
+        "f1_cover": 0.7354260089686099,
+        "precision_stego": 0.7361530715005036,
+        "recall_stego": 0.731,
+        "f1_stego": 0.733567486201706,
+        "auc": 0.8391899999999999
+    }
+}
