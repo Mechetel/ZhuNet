@@ -6,15 +6,11 @@ import math
 import numpy as np
 
 
-SRM_npy1 = np.load('kernels/SRM3_3.npy')
-SRM_npy2 = np.load('kernels/SRM5_5.npy')
-
-
-class pre_Layer_3_3(nn.Module):
+class PreLayer3x3(nn.Module):
     """3x3 SRM preprocessing layer."""
 
     def __init__(self, stride=1, padding=1):
-        super(pre_Layer_3_3, self).__init__()
+        super(PreLayer3x3, self).__init__()
         self.in_channels = 1
         self.out_channels = 25
         self.kernel_size = (3, 3)
@@ -27,18 +23,20 @@ class pre_Layer_3_3(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        self.weight.data.numpy()[:] = SRM_npy1
+        # Load SRM kernels from numpy file
+        srm_npy = np.load('kernels/SRM3_3.npy')
+        self.weight.data.numpy()[:] = srm_npy
         self.bias.data.zero_()
 
     def forward(self, input):
         return F.conv2d(input, self.weight, self.bias, self.stride, self.padding)
 
 
-class pre_Layer_5_5(nn.Module):
+class PreLayer5x5(nn.Module):
     """5x5 SRM preprocessing layer."""
 
     def __init__(self, stride=1, padding=2):
-        super(pre_Layer_5_5, self).__init__()
+        super(PreLayer5x5, self).__init__()
         self.in_channels = 1
         self.out_channels = 5
         self.kernel_size = (5, 5)
@@ -51,18 +49,20 @@ class pre_Layer_5_5(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        self.weight.data.numpy()[:] = SRM_npy2
+        # Load SRM kernels from numpy file
+        srm_npy = np.load('kernels/SRM5_5.npy')
+        self.weight.data.numpy()[:] = srm_npy
         self.bias.data.zero_()
 
     def forward(self, input):
         return F.conv2d(input, self.weight, self.bias, self.stride, self.padding)
 
 
-class spp_layer(nn.Module):
+class SPPLayer(nn.Module):
     """Spatial Pyramid Pooling layer."""
 
     def __init__(self):
-        super(spp_layer, self).__init__()
+        super(SPPLayer, self).__init__()
 
     def forward(self, x):
         """
@@ -94,11 +94,11 @@ class spp_layer(nn.Module):
         return spp
 
 
-class Basic_Block(nn.Module):
+class BasicBlock(nn.Module):
     """Basic convolutional block with BatchNorm and ReLU."""
 
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, use_global):
-        super(Basic_Block, self).__init__()
+        super(BasicBlock, self).__init__()
 
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
         self.bn = nn.BatchNorm2d(out_channels)
@@ -115,13 +115,13 @@ class Basic_Block(nn.Module):
         return x
 
 
-class pre_layer(nn.Module):
+class PreprocessingLayer(nn.Module):
     """Preprocessing layer combining 3x3 and 5x5 SRM filters."""
 
     def __init__(self):
-        super(pre_layer, self).__init__()
-        self.conv1 = pre_Layer_3_3()
-        self.conv2 = pre_Layer_5_5()
+        super(PreprocessingLayer, self).__init__()
+        self.conv1 = PreLayer3x3()
+        self.conv2 = PreLayer5x5()
 
     def forward(self, x):
         x1 = self.conv1(x)
@@ -129,11 +129,11 @@ class pre_layer(nn.Module):
         return torch.cat([x1, x2], dim=1)
 
 
-class conv_Layer(nn.Module):
+class ConvLayer(nn.Module):
     """Main convolutional layers with residual connection and SPP."""
 
     def __init__(self):
-        super(conv_Layer, self).__init__()
+        super(ConvLayer, self).__init__()
 
         # Depthwise separable convolutions
         self.conv1 = nn.Conv2d(30, 60, 3, 1, 1, groups=30)
@@ -146,17 +146,17 @@ class conv_Layer(nn.Module):
 
         # Main convolutional layers
         self.conv_layer = nn.Sequential(
-            Basic_Block(30, 32, 3, 1, 1, False),
-            Basic_Block(32, 32, 3, 1, 1, False),
-            Basic_Block(32, 64, 3, 1, 1, False),
-            Basic_Block(64, 128, 3, 1, 1, True)
+            BasicBlock(30, 32, 3, 1, 1, False),
+            BasicBlock(32, 32, 3, 1, 1, False),
+            BasicBlock(32, 64, 3, 1, 1, False),
+            BasicBlock(64, 128, 3, 1, 1, True)
         )
 
         # Spatial pyramid pooling
-        self.spp = spp_layer()
+        self.spp = SPPLayer()
 
         # Classifier
-        self.classfier = nn.Sequential(
+        self.classifier = nn.Sequential(
             nn.Linear(2688, 1024),
             nn.ReLU(inplace=True),
             nn.Linear(1024, 2),
@@ -197,7 +197,7 @@ class conv_Layer(nn.Module):
         x = self.spp(x)
 
         # Classification
-        x = self.classfier(x)
+        x = self.classifier(x)
 
         return x
 
@@ -215,8 +215,8 @@ class ZhuNet(nn.Module):
 
     def __init__(self):
         super(ZhuNet, self).__init__()
-        self.layer1 = pre_layer()
-        self.layer2 = conv_Layer()
+        self.layer1 = PreprocessingLayer()
+        self.layer2 = ConvLayer()
 
     def forward(self, x):
         x = self.layer1(x)
