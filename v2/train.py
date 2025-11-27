@@ -5,7 +5,7 @@ import torch.optim as optim
 from tqdm import tqdm
 import argparse
 import os
-from model import ZhuNet
+from model import AttentionZhuNet
 from utils import get_data_loaders, calculate_metrics, save_checkpoint, MetricsTracker
 
 
@@ -156,7 +156,7 @@ def train(args):
     )
 
     # Initialize model
-    model = ZhuNet().to(device)
+    model = AttentionZhuNet().to(device)
     print(f"Model initialized with {sum(p.numel() for p in model.parameters()):,} parameters")
 
     # Loss function and optimizer - EXACT SAME AS ORIGINAL
@@ -273,7 +273,7 @@ def train(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train Steganalysis Classifier (ZhuNet)')
+    parser = argparse.ArgumentParser(description='Train Steganalysis Classifier (AttentionZhuNet)')
 
     # Machine type
     parser.add_argument(

@@ -11,7 +11,7 @@ import argparse
 import os
 import json
 from datetime import datetime
-from model import ZhuNet
+from model import AttentionZhuNet
 from utils import get_data_loaders, calculate_metrics
 
 
@@ -47,7 +47,7 @@ def test_model(args):
 
     # Load model
     print(f"\nLoading model from {args.model_path}...")
-    model = ZhuNet().to(device)
+    model = AttentionZhuNet().to(device)
 
     checkpoint = torch.load(args.model_path, map_location=device)
     if 'model_state_dict' in checkpoint:
@@ -380,7 +380,7 @@ def save_test_results(args, test_loss, metrics, cm, roc_auc, avg_precision,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Test Steganalysis Classifier (ZhuNet)')
+    parser = argparse.ArgumentParser(description='Test Steganalysis Classifier (AttentionZhuNet)')
 
     # Machine type
     parser.add_argument(
