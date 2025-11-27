@@ -192,10 +192,10 @@ def train(args):
         epoch_start_time = time.time()
 
         # Learning rate scheduling - EXACT SAME AS ORIGINAL
-        if epoch in schedule_lr:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] /= 5
-            print(f"Learning rate adjusted to: {param_group['lr']}")
+        # if epoch in schedule_lr:
+        #     for param_group in optimizer.param_groups:
+        #         param_group['lr'] /= 5
+        #     print(f"Learning rate adjusted to: {param_group['lr']}")
 
         # Get current learning rate
         current_lr = optimizer.param_groups[0]['lr']
