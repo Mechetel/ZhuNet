@@ -1,0 +1,29 @@
+======================================================================
+TRAINING SUMMARY
+======================================================================
+
+Training Duration: 0:52:28.583803
+
+Best Validation Metrics:
+  Best Accuracy:  0.7370 (Epoch 82)
+  Best Loss:      0.4862 (Epoch 97)
+  Best F1 Score:  0.7506 (Epoch 47)
+
+Final Validation Metrics (Epoch 100):
+  Accuracy:           0.7345
+  Precision:          0.7884
+  Recall:             0.6410
+  F1 Score:           0.7071
+  AUC:                0.8365
+
+  Cover Metrics:
+    Precision:        0.6976
+    Recall:           0.8280
+    F1 Score:         0.7572
+
+  Stego Metrics:
+    Precision:        0.7884
+    Recall:           0.6410
+    F1 Score:         0.7071
+
+======================================================================

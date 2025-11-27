@@ -14,4 +14,4 @@ git clone https://github.com/Mechetel/ZhuNet.git
 python3 ~/ZhuNet/prepare_gbrasnet.py --source ~/datasets/GBRASNET --destination ~/datasets/ready_to_use/GBRASNET
 
 cd ZhuNet
-python3 Main.py
+python3 train.py
