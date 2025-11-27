@@ -320,8 +320,8 @@ if __name__ == '__main__':
 
     # Saving and logging
     parser.add_argument("--save_dir", type=str, default="checkpoints", help="Directory to save checkpoints")
-    parser.add_argument("--save_freq", type=int, default=1, help="Frequency of saving checkpoints (epochs)")
-    parser.add_argument("--validation_freq", type=int, default=5, help="Frequency of validation (epochs)")
+    parser.add_argument("--save_freq", type=int, default=5, help="Frequency of saving checkpoints (epochs)")
+    parser.add_argument("--validation_freq", type=int, default=1, help="Frequency of validation (epochs)")
     parser.add_argument("--print_freq", type=int, default=50, help="Frequency of printing progress (batches)")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of data loading workers")
 
